@@ -1,0 +1,13 @@
+ngx_addon_name=ngx_cache_hash_header_module
+
+HEADERS_MORE_SRCS="                                                         \
+                $ngx_addon_dir/src/ngx_cache_hash_header.c             \
+                "
+
+HEADERS_MORE_DEPS="                                                         \
+                $ngx_addon_dir/src/ngx_cache_hash_header.h             \
+                "
+
+HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES $ngx_addon_name"
+NGX_ADDON_SRCS="$NGX_ADDON_SRCS $HEADERS_MORE_SRCS"
+NGX_ADDON_DEPS="$NGX_ADDON_DEPS $HEADERS_MORE_DEPS"

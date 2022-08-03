@@ -55,17 +55,12 @@ ngx_cache_hash_header_post_config(ngx_conf_t *cf)
     ngx_http_core_main_conf_t       *cmcf;
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
-
+    // 在nginx的NGX_HTTP_REWRITE_PHASE阶段挂载ngx_cache_hash_header_handler
     h = ngx_array_push(&cmcf->phases[NGX_HTTP_REWRITE_PHASE].handlers);
     if (h == NULL) {
         return NGX_ERROR;
     }
-
     *h = ngx_cache_hash_header_handler;
-//    ngx_http_core_loc_conf_t *clcf;
-//    clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
-//    clcf->handler = ngx_cache_hash_header_handler;
-
     return NGX_OK;
 }
 
@@ -100,7 +95,7 @@ ngx_http_add_header_helper(ngx_http_request_t *r)
 {
     ngx_table_elt_t             *ch;
     ngx_table_elt_t             *crc32h;
-
+    // 增加两个header Cache-Hash 和 CRC32
     ch = ngx_list_push(&r->headers_in.headers);
     if (ch == NULL) {
         return NGX_ERROR;
@@ -109,10 +104,13 @@ ngx_http_add_header_helper(ngx_http_request_t *r)
     if (crc32h == NULL) {
         return NGX_ERROR;
     }
+    // 初始化hash header
     ngx_cache_hash_header_init(r, ch);
     ngx_cache_hash_header_init(r, crc32h);
+    // 设置header的key
     ngx_str_set(&ch->key, "Cache-Hash");
     ngx_str_set(&crc32h->key, "CRC32");
+    // 设置header的value
     ngx_cache_hash_header_create_key(r, ch, crc32h);
     return NGX_OK;
 }
@@ -138,6 +136,7 @@ ngx_cache_hash_header_create_key(ngx_http_request_t *r, ngx_table_elt_t *ch, ngx
     uint32_t           crc32;
     u_char             *p;
     u_char             crc32p[11];
+    // 获取cache key对应的hash值
     ngx_crc32_init(crc32);
     ngx_md5_init(&md5);
     ngx_crc32_update(&crc32, r->uri.data, r->uri.len);
@@ -150,7 +149,7 @@ ngx_cache_hash_header_create_key(ngx_http_request_t *r, ngx_table_elt_t *ch, ngx
     ch->value.len = 2 * NGX_HTTP_CACHE_KEY_LEN;
     ch->lowcase_key = ngx_pnalloc(r->pool, ch->key.len);
     ngx_strlow(ch->lowcase_key, ch->key.data, ch->key.len);
-
+    // 设置crc32的header
     ngx_sprintf(crc32p,"%i", crc32);
     p = ngx_pnalloc(r->pool, ngx_strlen(crc32p) + 1);
     ngx_cpystrn(p, crc32p, ngx_strlen(crc32p) + 1);
